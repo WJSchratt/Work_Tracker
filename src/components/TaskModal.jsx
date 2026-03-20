@@ -5,28 +5,25 @@ import './TaskModal.css'
 const STATUSES = [
   { key: 'todo', label: 'To Do' },
   { key: 'inprogress', label: 'In Progress' },
-  { key: 'blocked', label: 'Blocked' },
+  { key: 'testing', label: 'Testing' },
   { key: 'done', label: 'Done' }
 ]
 const PRIORITIES = ['critical', 'high', 'medium', 'low']
 
-export default function TaskModal({ task, clients, onSaveClients, onClose, onSave, onDelete, onMove }) {
+export default function TaskModal({ task, onClose, onSave, onDelete, onArchive, onMove }) {
   const isNew = !task
   const [title, setTitle] = useState(task?.title || '')
   const [description, setDescription] = useState(task?.description || '')
   const [priority, setPriority] = useState(task?.priority || 'medium')
   const [status, setStatus] = useState(task?.status || 'todo')
-  const [client, setClient] = useState(task?.client || '')
   const [notes, setNotes] = useState(task?.notes || [])
   const [newNote, setNewNote] = useState('')
-  const [newClient, setNewClient] = useState('')
-  const [showAddClient, setShowAddClient] = useState(false)
   const [saving, setSaving] = useState(false)
 
   const handleSave = async () => {
     if (!title.trim()) return
     setSaving(true)
-    await onSave({ title: title.trim(), description, priority, status, client, notes })
+    await onSave({ title: title.trim(), description, priority, status, notes })
     setSaving(false)
     onClose()
   }
@@ -44,15 +41,6 @@ export default function TaskModal({ task, clients, onSaveClients, onClose, onSav
     const updated = notes.filter((_, idx) => idx !== i)
     setNotes(updated)
     if (!isNew) onSave({ notes: updated })
-  }
-
-  const addClient = () => {
-    if (!newClient.trim() || clients.includes(newClient.trim())) return
-    const updated = [...clients, newClient.trim()]
-    onSaveClients(updated)
-    setClient(newClient.trim())
-    setNewClient('')
-    setShowAddClient(false)
   }
 
   return (
@@ -87,22 +75,7 @@ export default function TaskModal({ task, clients, onSaveClients, onClose, onSav
                 </select>
               </div>
             </div>
-            <div className="field">
-              <label>Client / Project</label>
-              <div className="client-row">
-                <select className="field-input" value={client} onChange={e => setClient(e.target.value)}>
-                  <option value="">— none —</option>
-                  {clients.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-                <button className="btn-ghost" onClick={() => setShowAddClient(!showAddClient)}>+</button>
-              </div>
-              {showAddClient && (
-                <div className="add-client-row">
-                  <input className="field-input" value={newClient} onChange={e => setNewClient(e.target.value)} placeholder="New client name..." onKeyDown={e => e.key === 'Enter' && addClient()} />
-                  <button className="btn-ghost" onClick={addClient}>Add</button>
-                </div>
-              )}
-            </div>
+
             {!isNew && onMove && (
               <div className="field">
                 <label>Quick Move</label>
@@ -144,6 +117,9 @@ export default function TaskModal({ task, clients, onSaveClients, onClose, onSav
         <div className="modal-footer">
           {onDelete && (
             <button className="btn-delete" onClick={() => { if (window.confirm('Delete this task?')) onDelete() }}>Delete</button>
+          )}
+          {onArchive && (
+            <button className="btn-archive" onClick={() => { if (window.confirm('Archive this task?')) onArchive() }}>Archive</button>
           )}
           <div className="footer-right">
             <button className="btn-cancel" onClick={onClose}>Cancel</button>
