@@ -17,11 +17,10 @@
 .header-center { display: flex; gap: 4px; }
 .view-tab {
   background: transparent; border: 1px solid var(--border); border-radius: var(--radius-sm);
-  padding: 8px 20px; font-size: 13px; font-weight: 500; color: var(--text-muted);
-  transition: all 0.15s; letter-spacing: 0.01em;
+  padding: 6px 16px; font-size: 13px; color: var(--text-muted); transition: all 0.15s;
 }
-.view-tab:hover { background: var(--card); color: var(--text); border-color: var(--border-light); }
-.view-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.view-tab:hover { background: var(--card); color: var(--text); }
+.view-tab.active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
 .header-right { display: flex; align-items: center; gap: 12px; }
 
 .board-layout { padding: 1.5rem 2rem; display: flex; flex-direction: column; gap: 1.5rem; }
@@ -195,10 +194,3 @@
   font-family: var(--font);
 }
 .low-show-btn:hover { background: var(--green-dim); }
-
-.btn-transcript {
-  background: transparent; border: 1px solid var(--accent); border-radius: var(--radius-sm);
-  padding: 10px 20px; font-size: 14px; font-weight: 500; color: var(--accent);
-  transition: all 0.15s; letter-spacing: 0.02em;
-}
-.btn-transcript:hover { background: var(--accent-dim); }

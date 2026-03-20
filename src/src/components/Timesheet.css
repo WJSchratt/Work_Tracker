@@ -1,0 +1,49 @@
+.timesheet { padding: 1.5rem 2rem; }
+
+.ts-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; gap: 12px; }
+.ts-nav { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 7px 14px; font-size: 13px; color: var(--text-muted); transition: all 0.15s; }
+.ts-nav:hover { border-color: var(--accent); color: var(--accent); }
+.ts-week-label { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 500; color: var(--text); }
+.ts-today-btn { background: var(--accent-dim); border: 1px solid var(--accent); border-radius: var(--radius-sm); padding: 3px 10px; font-size: 11px; color: var(--accent); }
+.ts-today-btn:hover { opacity: 0.8; }
+
+.ts-total { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 20px; margin-bottom: 1.25rem; width: fit-content; }
+.ts-total-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.ts-total-val { font-size: 22px; font-weight: 600; color: var(--accent); font-family: var(--mono); }
+
+.ts-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 900px) { .ts-days { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 560px) { .ts-days { grid-template-columns: 1fr; } }
+
+.ts-day { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.ts-day.today { border-color: var(--accent); }
+.ts-day.weekend { opacity: 0.6; }
+
+.ts-day-header { padding: 10px 12px; border-bottom: 1px solid var(--border); background: var(--surface); }
+.ts-day-name { font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.ts-day.today .ts-day-name { color: var(--accent); }
+.ts-day-date { font-size: 18px; font-weight: 600; color: var(--text); margin: 2px 0; }
+.ts-day-total { font-size: 12px; color: var(--green); font-family: var(--mono); font-weight: 500; }
+
+.ts-sessions { padding: 8px; display: flex; flex-direction: column; gap: 6px; min-height: 60px; }
+.ts-no-sessions { font-size: 11px; color: var(--text-dim); text-align: center; padding: 6px 0; }
+
+.ts-session { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 7px 9px; }
+.ts-session-times { display: flex; align-items: center; gap: 5px; font-size: 11px; font-family: var(--mono); cursor: pointer; margin-bottom: 3px; }
+.ts-session-times:hover { opacity: 0.7; }
+.ts-time-in { color: var(--green); }
+.ts-time-out { color: var(--text-muted); }
+.ts-session-sep { color: var(--text-dim); font-size: 10px; }
+.ts-session-bottom { display: flex; align-items: center; justify-content: space-between; }
+.ts-session-dur { font-size: 11px; color: var(--text-muted); font-family: var(--mono); }
+.ts-del-btn { background: transparent; border: none; color: var(--text-dim); font-size: 10px; padding: 1px 4px; border-radius: 3px; transition: all 0.15s; }
+.ts-del-btn:hover { color: var(--red); background: var(--red-dim); }
+
+.ts-edit, .ts-add-form { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.ts-time-input { background: var(--card); border: 1px solid var(--border); border-radius: 4px; padding: 3px 5px; font-size: 11px; color: var(--text); font-family: var(--mono); width: 80px; }
+.ts-time-input:focus { outline: none; border-color: var(--accent); }
+.ts-save-btn { background: var(--green); border: none; border-radius: 4px; padding: 3px 7px; font-size: 11px; color: #fff; }
+.ts-cancel-btn { background: var(--card); border: 1px solid var(--border); border-radius: 4px; padding: 3px 7px; font-size: 11px; color: var(--text-muted); }
+
+.ts-add-btn { background: transparent; border: 1px dashed var(--border); border-radius: var(--radius-sm); padding: 4px; font-size: 11px; color: var(--text-dim); width: 100%; transition: all 0.15s; }
+.ts-add-btn:hover { border-color: var(--accent); color: var(--accent); }

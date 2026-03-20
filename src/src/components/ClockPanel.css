@@ -1,0 +1,15 @@
+.clock-panel { display: flex; align-items: center; gap: 14px; }
+.clock-times { display: flex; flex-direction: column; align-items: flex-end; }
+.clock-session-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
+.clock-session-val { font-size: 15px; font-weight: 600; color: var(--text); font-family: var(--mono); }
+.clock-session-val.running { color: var(--green); }
+
+.clock-btn { display: flex; align-items: center; gap: 7px; border: none; border-radius: var(--radius-sm); padding: 9px 18px; font-size: 13px; font-weight: 500; transition: opacity 0.15s; flex-shrink: 0; }
+.clock-btn.in { background: var(--green); color: #fff; }
+.clock-btn.out { background: transparent; color: var(--red); border: 1px solid var(--red); }
+.clock-btn:hover { opacity: 0.85; }
+
+.clock-btn-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.in-dot { background: rgba(255,255,255,0.8); }
+.out-dot { background: var(--red); animation: dotPulse 1s ease-in-out infinite; }
+@keyframes dotPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
