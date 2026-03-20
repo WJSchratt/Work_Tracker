@@ -4,6 +4,7 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import './TranscriptInput.css'
 
 const ANTHROPIC_KEY = import.meta.env.VITE_ANTHROPIC_KEY
+const OPENAI_KEY = import.meta.env.VITE_OPENAI_KEY
 const CATEGORIES = ['Meeting Notes', 'Voice Note', 'Loom Transcript', 'Signal', 'General']
 
 async function callClaude(prompt) {
@@ -26,42 +27,19 @@ async function callClaude(prompt) {
   return data.content?.[0]?.text || ''
 }
 
-async function transcribeAudio(base64Data, mediaType) {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+async function transcribeAudio(file) {
+  if (!OPENAI_KEY) throw new Error('VITE_OPENAI_KEY is not set in environment variables')
+  const form = new FormData()
+  form.append('file', file)
+  form.append('model', 'whisper-1')
+  const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': ANTHROPIC_KEY,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true'
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 4096,
-      messages: [{
-        role: 'user',
-        content: [
-          {
-            type: 'document',
-            source: { type: 'base64', media_type: mediaType, data: base64Data }
-          },
-          { type: 'text', text: 'Please transcribe this audio recording verbatim. Return only the transcription text, no commentary.' }
-        ]
-      }]
-    })
+    headers: { 'Authorization': `Bearer ${OPENAI_KEY}` },
+    body: form
   })
   const data = await res.json()
   if (data.error) throw new Error(data.error.message)
-  return data.content?.[0]?.text || ''
-}
-
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result.split(',')[1])
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
+  return data.text || ''
 }
 
 export default function TranscriptInput({ onAddTasks, onClose, asModal }) {
@@ -134,13 +112,10 @@ export default function TranscriptInput({ onAddTasks, onClose, asModal }) {
 
   const handleAudioFile = async (file) => {
     if (!file) return
-    const allowed = ['audio/mp4', 'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/m4a', 'audio/ogg', 'video/mp4']
-    const mediaType = allowed.includes(file.type) ? file.type : 'audio/mp4'
     setTranscribing(true)
     setError('')
     try {
-      const base64 = await fileToBase64(file)
-      const transcript = await transcribeAudio(base64, mediaType)
+      const transcript = await transcribeAudio(file)
       setText(transcript)
       setMode('text')
       await process(transcript)
@@ -227,9 +202,9 @@ export default function TranscriptInput({ onAddTasks, onClose, asModal }) {
       </div>
 
       <div className="ti-mode-tabs">
-        <button className={`ti-tab ${mode === 'text' ? 'active' : ''}`} onClick={() => setMode('text')}>📄 Paste Text</button>
-        <button className={`ti-tab ${mode === 'voice' ? 'active' : ''}`} onClick={() => setMode('voice')}>🎙 Voice</button>
-        <button className={`ti-tab ${mode === 'file' ? 'active' : ''}`} onClick={() => setMode('file')}>📎 Upload File</button>
+        <button className={`ti-tab ${mode === 'text' ? 'active' : ''}`} onClick={() => setMode('text')}>Paste Text</button>
+        <button className={`ti-tab ${mode === 'voice' ? 'active' : ''}`} onClick={() => setMode('voice')}>Voice</button>
+        <button className={`ti-tab ${mode === 'file' ? 'active' : ''}`} onClick={() => setMode('file')}>Upload File</button>
       </div>
 
       {mode === 'text' && (
@@ -252,8 +227,8 @@ export default function TranscriptInput({ onAddTasks, onClose, asModal }) {
           {recording && <div className="ti-live">{liveText || 'Listening...'}</div>}
           <div className="ti-voice-row">
             {!recording
-              ? <button className="ti-btn-rec" onClick={startVoice}>🎙 Start Recording</button>
-              : <button className="ti-btn-stop" onClick={stopVoice}>⏹ Stop & Process</button>}
+              ? <button className="ti-btn-rec" onClick={startVoice}>Start Recording</button>
+              : <button className="ti-btn-stop" onClick={stopVoice}>Stop & Process</button>}
             {recording && <span className="ti-rec-dot">● Recording</span>}
           </div>
           {error && <div className="ti-error">{error}</div>}
@@ -272,7 +247,7 @@ export default function TranscriptInput({ onAddTasks, onClose, asModal }) {
           >
             {transcribing
               ? <span className="ti-drop-label">Transcribing...</span>
-              : <><span className="ti-drop-icon">🎵</span><span className="ti-drop-label">Drop audio/video file here or click to browse</span><span className="ti-drop-sub">MP4 · MP3 · WAV · M4A</span></>
+              : <><span className="ti-drop-label">Drop audio/video file here or click to browse</span><span className="ti-drop-sub">MP4 · MP3 · WAV · M4A</span></>
             }
           </div>
           <input
