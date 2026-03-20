@@ -21,10 +21,15 @@ export default async function handler(req, res) {
 
       const uploadRes = await fetch('https://api.assemblyai.com/v2/upload', {
         method: 'POST',
-        headers: { authorization: ASSEMBLYAI_KEY, 'content-type': 'application/octet-stream' },
+        headers: { 
+          authorization: ASSEMBLYAI_KEY,
+          'content-type': 'application/octet-stream',
+          'transfer-encoding': 'chunked'
+        },
         body: buffer
       })
       const data = await uploadRes.json()
+      console.log('Upload response:', JSON.stringify(data))
       return res.status(200).json(data)
     }
 
@@ -32,13 +37,18 @@ export default async function handler(req, res) {
       const chunks = []
       for await (const chunk of req) chunks.push(chunk)
       const body = JSON.parse(Buffer.concat(chunks).toString())
+      console.log('Transcribe request body:', JSON.stringify(body))
 
       const transcriptRes = await fetch('https://api.assemblyai.com/v2/transcript', {
         method: 'POST',
-        headers: { authorization: ASSEMBLYAI_KEY, 'content-type': 'application/json' },
+        headers: { 
+          authorization: ASSEMBLYAI_KEY,
+          'content-type': 'application/json'
+        },
         body: JSON.stringify({ audio_url: body.audio_url })
       })
       const data = await transcriptRes.json()
+      console.log('Transcribe response:', JSON.stringify(data))
       return res.status(200).json(data)
     }
 
