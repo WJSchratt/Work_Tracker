@@ -23,14 +23,16 @@ export default function TaskModal({ task, onClose, onSave, onDelete, onArchive, 
   const [saving, setSaving] = useState(false)
   const [recording, setRecording] = useState(false)
   const [liveTranscript, setLiveTranscript] = useState('')
-  const [activeTab, setActiveTab] = useState('notes')
+  const [activeTab, setActiveTab] = useState('voice')
+  const [uploadingAudio, setUploadingAudio] = useState(false)
   const recognitionRef = useRef(null)
   const finalRef = useRef('')
+  const fileInputRef = useRef(null)
 
   const handleSave = async () => {
     if (!title.trim()) return
     setSaving(true)
-    await onSave({ title: title.trim(), description, priority, status, notes, voiceNotes })
+    await onSave({ title: title.trim(), description, priority, status, notes, voiceNotes, hasNewNote: false })
     setSaving(false)
     onClose()
   }
@@ -41,7 +43,7 @@ export default function TaskModal({ task, onClose, onSave, onDelete, onArchive, 
     const updated = [...notes, note]
     setNotes(updated)
     setNewNote('')
-    if (!isNew) onSave({ notes: updated })
+    if (!isNew) onSave({ notes: updated, hasNewNote: true })
   }
 
   const deleteNote = (i) => {
@@ -53,7 +55,7 @@ export default function TaskModal({ task, onClose, onSave, onDelete, onArchive, 
   const startRecording = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SpeechRecognition) {
-      alert('Voice notes require Chrome. Please open this app in Chrome.')
+      alert('Voice recording requires Chrome. Please open this app in Chrome.')
       return
     }
     const recognition = new SpeechRecognition()
@@ -73,12 +75,7 @@ export default function TaskModal({ task, onClose, onSave, onDelete, onArchive, 
 
     recognition.onend = () => {
       const transcript = finalRef.current.trim()
-      if (transcript) {
-        const vn = { transcript, ts: new Date().toISOString(), by: auth.currentUser?.email || 'Walt' }
-        const updated = [...voiceNotes, vn]
-        setVoiceNotes(updated)
-        if (!isNew) onSave({ voiceNotes: updated })
-      }
+      if (transcript) saveVoiceNote(transcript)
       setRecording(false)
       setLiveTranscript('')
       finalRef.current = ''
@@ -89,8 +86,36 @@ export default function TaskModal({ task, onClose, onSave, onDelete, onArchive, 
     setRecording(true)
   }
 
-  const stopRecording = () => {
-    recognitionRef.current?.stop()
+  const stopRecording = () => recognitionRef.current?.stop()
+
+  const saveVoiceNote = (transcript) => {
+    const vn = { transcript, ts: new Date().toISOString(), by: auth.currentUser?.email || 'Walt', type: 'mic' }
+    const updated = [...voiceNotes, vn]
+    setVoiceNotes(updated)
+    if (!isNew) onSave({ voiceNotes: updated, hasNewNote: true })
+  }
+
+  const handleAudioUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingAudio(true)
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    const url = URL.createObjectURL(file)
+
+    const vn = {
+      transcript: `[Audio file: ${file.name}] — Open in Chrome and use the mic button to transcribe voice notes in real time.`,
+      audioName: file.name,
+      ts: new Date().toISOString(),
+      by: auth.currentUser?.email || 'Walt',
+      type: 'upload',
+      url
+    }
+    const updated = [...voiceNotes, vn]
+    setVoiceNotes(updated)
+    if (!isNew) onSave({ voiceNotes: updated, hasNewNote: true })
+    setUploadingAudio(false)
+    e.target.value = ''
   }
 
   const deleteVoiceNote = (i) => {
@@ -145,13 +170,56 @@ export default function TaskModal({ task, onClose, onSave, onDelete, onArchive, 
 
           <div className="modal-right">
             <div className="modal-tabs">
+              <button className={`modal-tab ${activeTab === 'voice' ? 'active' : ''}`} onClick={() => setActiveTab('voice')}>
+                🎙 Voice {voiceNotes.length > 0 && <span className="tab-ct">{voiceNotes.length}</span>}
+              </button>
               <button className={`modal-tab ${activeTab === 'notes' ? 'active' : ''}`} onClick={() => setActiveTab('notes')}>
                 Notes {notes.length > 0 && <span className="tab-ct">{notes.length}</span>}
               </button>
-              <button className={`modal-tab ${activeTab === 'voice' ? 'active' : ''}`} onClick={() => setActiveTab('voice')}>
-                Voice {voiceNotes.length > 0 && <span className="tab-ct">{voiceNotes.length}</span>}
-              </button>
             </div>
+
+            {activeTab === 'voice' && (
+              <div className="voice-section">
+                <div className="voice-list">
+                  {voiceNotes.length === 0 && !recording && (
+                    <div className="notes-empty">No voice notes — record or upload an audio file</div>
+                  )}
+                  {recording && (
+                    <div className="live-transcript">
+                      <div className="live-label">🔴 Listening...</div>
+                      <div className="live-text">{liveTranscript || 'Start speaking...'}</div>
+                    </div>
+                  )}
+                  {voiceNotes.map((vn, i) => (
+                    <div key={i} className="voice-note-item">
+                      {vn.url && vn.type === 'upload' && (
+                        <audio src={vn.url} controls className="voice-player" />
+                      )}
+                      <div className="voice-transcript">
+                        <div className="voice-transcript-label">{vn.type === 'upload' ? '📎 Uploaded' : '🎙 Recorded'}</div>
+                        <div className="voice-transcript-text">{vn.transcript}</div>
+                      </div>
+                      <div className="note-footer">
+                        <span className="note-ts">{vn.by} · {format(new Date(vn.ts), 'MMM d, h:mm a')}</span>
+                        <button className="note-del" onClick={() => deleteVoiceNote(i)}>✕</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="voice-controls">
+                  {!recording ? (
+                    <button className="btn-record" onClick={startRecording}>🎙 Record</button>
+                  ) : (
+                    <button className="btn-stop" onClick={stopRecording}>⏹ Stop & Save</button>
+                  )}
+                  <button className="btn-upload-audio" onClick={() => fileInputRef.current?.click()} disabled={uploadingAudio}>
+                    {uploadingAudio ? 'Uploading...' : '📎 Upload Audio'}
+                  </button>
+                  <input ref={fileInputRef} type="file" accept="audio/*,video/mp4" style={{ display: 'none' }} onChange={handleAudioUpload} />
+                  {recording && <span className="recording-indicator">Recording...</span>}
+                </div>
+              </div>
+            )}
 
             {activeTab === 'notes' && (
               <div className="notes-section">
@@ -173,51 +241,13 @@ export default function TaskModal({ task, onClose, onSave, onDelete, onArchive, 
                 </div>
               </div>
             )}
-
-            {activeTab === 'voice' && (
-              <div className="voice-section">
-                <div className="voice-list">
-                  {voiceNotes.length === 0 && !recording && <div className="notes-empty">No voice notes yet — hit Record and speak</div>}
-                  {recording && (
-                    <div className="live-transcript">
-                      <div className="live-label">🔴 Listening...</div>
-                      <div className="live-text">{liveTranscript || 'Start speaking...'}</div>
-                    </div>
-                  )}
-                  {voiceNotes.map((vn, i) => (
-                    <div key={i} className="voice-note-item">
-                      <div className="voice-transcript">
-                        <div className="voice-transcript-label">Voice Note</div>
-                        <div className="voice-transcript-text">{vn.transcript}</div>
-                      </div>
-                      <div className="note-footer">
-                        <span className="note-ts">{vn.by} · {format(new Date(vn.ts), 'MMM d, h:mm a')}</span>
-                        <button className="note-del" onClick={() => deleteVoiceNote(i)}>✕</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="voice-controls">
-                  {!recording ? (
-                    <button className="btn-record" onClick={startRecording}>🎙 Record Voice Note</button>
-                  ) : (
-                    <button className="btn-stop" onClick={stopRecording}>⏹ Stop & Save</button>
-                  )}
-                  {recording && <span className="recording-indicator">Recording — speak now</span>}
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
         <div className="modal-footer">
           <div className="footer-left">
-            {onDelete && (
-              <button className="btn-delete" onClick={() => { if (window.confirm('Delete this task?')) onDelete() }}>Delete</button>
-            )}
-            {onArchive && (
-              <button className="btn-archive" onClick={() => { if (window.confirm('Archive this task?')) onArchive() }}>Archive</button>
-            )}
+            {onDelete && <button className="btn-delete" onClick={() => { if (window.confirm('Delete this task?')) onDelete() }}>Delete</button>}
+            {onArchive && <button className="btn-archive" onClick={() => { if (window.confirm('Archive this task?')) onArchive() }}>Archive</button>}
           </div>
           <div className="footer-right">
             <button className="btn-cancel" onClick={onClose}>Cancel</button>

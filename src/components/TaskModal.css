@@ -84,9 +84,12 @@ select.field-input { cursor: pointer; }
 .voice-transcript-label { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
 .voice-transcript-text { font-size: 12px; color: var(--text); line-height: 1.5; }
 .voice-controls { padding: 1rem 1.25rem; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
-.btn-record { background: var(--accent-dim); border: 1px solid var(--accent); border-radius: var(--radius-sm); padding: 8px 16px; font-size: 13px; color: var(--accent); transition: opacity 0.15s; }
+.btn-record { background: var(--accent-dim); border: 1px solid var(--accent); border-radius: var(--radius-sm); padding: 8px 14px; font-size: 13px; color: var(--accent); transition: opacity 0.15s; }
 .btn-record:hover { opacity: 0.85; }
-.btn-stop { background: var(--red-dim); border: 1px solid var(--red); border-radius: var(--radius-sm); padding: 8px 16px; font-size: 13px; color: var(--red); }
+.btn-stop { background: var(--red-dim); border: 1px solid var(--red); border-radius: var(--radius-sm); padding: 8px 14px; font-size: 13px; color: var(--red); }
+.btn-upload-audio { background: transparent; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 14px; font-size: 13px; color: var(--text-muted); transition: all 0.15s; }
+.btn-upload-audio:hover { border-color: var(--accent); color: var(--accent); }
+.btn-upload-audio:disabled { opacity: 0.4; cursor: not-allowed; }
 .recording-indicator { font-size: 12px; color: var(--red); }
 
 .live-transcript {

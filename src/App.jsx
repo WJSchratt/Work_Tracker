@@ -30,6 +30,7 @@ export default function App() {
   const [dragOverPriority, setDragOverPriority] = useState(null)
   const [view, setView] = useState('board')
   const [elapsed, setElapsed] = useState(0)
+  const [lowExpanded, setLowExpanded] = useState(false)
 
   // Auth listener
   useEffect(() => {
@@ -188,16 +189,36 @@ export default function App() {
   const activeTasks = tasks.filter(t => !t.archived)
   const archivedTasks = tasks.filter(t => t.archived)
   const todoTasks = [...activeTasks.filter(t => t.status === 'todo')]
-    .sort((a, b) => (PRIORITY_ORDER[a.priority] ?? 3) - (PRIORITY_ORDER[b.priority] ?? 3))
+    .sort((a, b) => {
+      const po = (PRIORITY_ORDER[a.priority] ?? 3) - (PRIORITY_ORDER[b.priority] ?? 3)
+      if (po !== 0) return po
+      return (a.groupOrder ?? 0) - (b.groupOrder ?? 0)
+    })
   const inProgressTasks = activeTasks.filter(t => t.status === 'inprogress')
   const testingTasks = activeTasks.filter(t => t.status === 'testing')
   const doneTasks = activeTasks.filter(t => t.status === 'done')
   const priorities = ['critical', 'high', 'medium', 'low']
 
+  const onDropWithinGroup = async (e, targetTask) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!dragging || dragging === targetTask.id) { setDragging(null); setDragOver(null); return }
+    const dragTask = tasks.find(t => t.id === dragging)
+    if (!dragTask || dragTask.priority !== targetTask.priority) return
+    // Swap groupOrder values
+    await updateTask(dragging, { groupOrder: targetTask.groupOrder ?? 0 })
+    await updateTask(targetTask.id, { groupOrder: dragTask.groupOrder ?? 0 })
+    setDragging(null); setDragOver(null)
+  }
+
   const renderPriorityGroups = (colTasks, colKey) =>
     priorities.map(p => {
       const pTasks = colTasks.filter(t => t.priority === p)
+        .sort((a, b) => (a.groupOrder ?? 0) - (b.groupOrder ?? 0))
       const isGroupOver = dragOverPriority === `${colKey}-${p}`
+      const isLow = p === 'low'
+      const isCollapsed = isLow && !lowExpanded && pTasks.length > 0
+
       return (
         <div key={p}
           className={`priority-group ${isGroupOver ? 'group-drag-over' : ''} ${pTasks.length === 0 ? 'group-empty-group' : ''}`}
@@ -209,16 +230,29 @@ export default function App() {
             <span className="priority-dot" data-priority={p} />
             {p}
             {pTasks.length > 0 && <span className="priority-group-count">{pTasks.length}</span>}
+            {isLow && pTasks.length > 0 && (
+              <button className="low-toggle" onClick={e => { e.stopPropagation(); setLowExpanded(v => !v) }}>
+                {lowExpanded ? '▲ Hide' : '▼ Show'}
+              </button>
+            )}
           </div>
-          {pTasks.map(task => (
+          {!isCollapsed && pTasks.map((task, idx) => (
             <TaskCard key={task.id} task={task}
-              isDragging={dragging === task.id} isDragOver={dragOver === task.id}
-              onDragStart={() => onDragStart(task.id)} onDragEnd={onDragEnd}
+              isDragging={dragging === task.id}
+              isDragOver={dragOver === task.id}
+              orderIndex={idx + 1}
+              onDragStart={() => { onDragStart(task.id) }}
+              onDragEnd={onDragEnd}
               onDragOver={e => { e.preventDefault(); e.stopPropagation(); setDragOver(task.id) }}
-              onDrop={e => onDropOnCard(e, task.id)}
+              onDrop={e => onDropWithinGroup(e, task)}
               onClick={() => setSelectedTask(task)}
             />
           ))}
+          {isCollapsed && (
+            <button className="low-show-btn" onClick={() => setLowExpanded(true)}>
+              Show {pTasks.length} low priority task{pTasks.length !== 1 ? 's' : ''}
+            </button>
+          )}
           {pTasks.length === 0 && <div className="group-drop-hint">Drop to set {p}</div>}
         </div>
       )
@@ -256,7 +290,7 @@ export default function App() {
           </button>
         </div>
         <div className="header-right">
-          <ClockPanel clockState={clockState} onClockIn={clockIn} onClockOut={clockOut} todayMs={todayMs} activeTask={inProgressTasks[0] || null} />
+          <ClockPanel clockState={clockState} onClockIn={clockIn} onClockOut={clockOut} todayMs={todayMs} />
           <button className="signout-btn" onClick={() => signOut(auth)} title="Sign out">↩</button>
         </div>
       </header>
@@ -285,7 +319,17 @@ export default function App() {
         </div>
       ) : (
         <div className="board-layout">
-          <div className="board-actions">
+          <div className="board-top-row">
+            <DailyBriefing
+              tasks={activeTasks}
+              onAddTasks={(suggestedTasks) => {
+                suggestedTasks.forEach(t => addTask({
+                  title: t.title,
+                  description: t.description || '',
+                  priority: t.priority || 'medium',
+                }))
+              }}
+            />
             <button className="btn-new" onClick={() => setShowNewTask(true)}>+ New Task</button>
           </div>
 
@@ -355,18 +399,6 @@ export default function App() {
 
           {/* ISSUES BOARD */}
           <IssuesBoard issues={issues} currentUser={user} />
-
-          {/* DAILY BRIEFING + AI */}
-          <DailyBriefing
-            tasks={activeTasks}
-            onAddTasks={(suggestedTasks) => {
-              suggestedTasks.forEach(t => addTask({
-                title: t.title,
-                description: t.description || '',
-                priority: t.priority || 'medium',
-              }))
-            }}
-          />
 
           {/* KPI */}
           <div className="kpi-section">

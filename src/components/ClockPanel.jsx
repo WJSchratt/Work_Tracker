@@ -8,7 +8,7 @@ function fmtMs(ms) {
   return `${String(h).padStart(2,'0')}:${String(m%60).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`
 }
 
-export default function ClockPanel({ clockState, onClockIn, onClockOut, todayMs, activeTask }) {
+export default function ClockPanel({ clockState, onClockIn, onClockOut, todayMs }) {
   const [elapsed, setElapsed] = useState(0)
 
   useEffect(() => {
@@ -23,40 +23,13 @@ export default function ClockPanel({ clockState, onClockIn, onClockOut, todayMs,
 
   return (
     <div className="clock-panel">
-      {isClockedIn && (
-        <div className="clock-status-bar">
-          <div className="clock-pulse-ring" />
-          <div className="clock-status-text">
-            <span className="clock-status-label">Working</span>
-            {activeTask && <span className="clock-active-task">on: {activeTask.title.slice(0, 30)}{activeTask.title.length > 30 ? '…' : ''}</span>}
-          </div>
-        </div>
-      )}
-      <div className="clock-right">
-        <div className="clock-times">
-          <div className="clock-session-time">
-            {isClockedIn ? (
-              <><span className="clock-session-label">Session</span><span className="clock-session-val running">{fmtMs(elapsed)}</span></>
-            ) : (
-              <span className="clock-session-label">Not clocked in</span>
-            )}
-          </div>
-          <div className="clock-today-time">
-            <span className="clock-session-label">Today</span>
-            <span className="clock-session-val">{fmtMs(todayMs)}</span>
-          </div>
-        </div>
-        <button
-          className={`clock-btn ${isClockedIn ? 'out' : 'in'}`}
-          onClick={isClockedIn ? onClockOut : onClockIn}
-        >
-          {isClockedIn ? (
-            <><span className="clock-btn-dot out-dot" />Clock Out</>
-          ) : (
-            <><span className="clock-btn-dot in-dot" />Clock In</>
-          )}
-        </button>
+      <div className="clock-times">
+        <span className="clock-session-label">Today</span>
+        <span className={`clock-session-val ${isClockedIn ? 'running' : ''}`}>{fmtMs(todayMs)}</span>
       </div>
+      <button className={`clock-btn ${isClockedIn ? 'out' : 'in'}`} onClick={isClockedIn ? onClockOut : onClockIn}>
+        {isClockedIn ? <><span className="clock-btn-dot out-dot" />Clock Out</> : <><span className="clock-btn-dot in-dot" />Clock In</>}
+      </button>
     </div>
   )
 }

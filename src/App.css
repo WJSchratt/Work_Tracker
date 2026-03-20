@@ -25,6 +25,10 @@
 
 .board-layout { padding: 1.5rem 2rem; display: flex; flex-direction: column; gap: 1.5rem; }
 
+.board-top-row { display: flex; align-items: flex-start; gap: 12px; }
+.board-top-row .briefing { flex: 1; }
+.board-top-row .btn-new { flex-shrink: 0; margin-top: 2px; }
+
 .board-actions { display: flex; justify-content: flex-end; }
 .btn-new {
   background: var(--accent); border: none; border-radius: var(--radius-sm);
@@ -173,3 +177,18 @@
 .archive-restore:hover { border-color: var(--accent); color: var(--accent); }
 .archive-delete { background: transparent; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 5px 12px; font-size: 12px; color: var(--text-dim); transition: all 0.15s; }
 .archive-delete:hover { border-color: var(--red); color: var(--red); }
+
+.low-toggle {
+  margin-left: auto; background: transparent; border: none;
+  font-size: 10px; color: var(--green); cursor: pointer; padding: 0 4px;
+  font-family: var(--font);
+}
+.low-toggle:hover { opacity: 0.7; }
+
+.low-show-btn {
+  width: 100%; background: transparent; border: none;
+  padding: 10px 12px; font-size: 11px; color: var(--green);
+  cursor: pointer; text-align: left; transition: background 0.15s;
+  font-family: var(--font);
+}
+.low-show-btn:hover { background: var(--green-dim); }
