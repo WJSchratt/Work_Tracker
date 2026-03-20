@@ -26,6 +26,44 @@ async function callClaude(prompt) {
   return data.content?.[0]?.text || ''
 }
 
+async function transcribeAudio(base64Data, mediaType) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': ANTHROPIC_KEY,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 4096,
+      messages: [{
+        role: 'user',
+        content: [
+          {
+            type: 'document',
+            source: { type: 'base64', media_type: mediaType, data: base64Data }
+          },
+          { type: 'text', text: 'Please transcribe this audio recording verbatim. Return only the transcription text, no commentary.' }
+        ]
+      }]
+    })
+  })
+  const data = await res.json()
+  if (data.error) throw new Error(data.error.message)
+  return data.content?.[0]?.text || ''
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result.split(',')[1])
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
 export default function TranscriptInput({ onAddTasks, onClose, asModal }) {
   const [mode, setMode] = useState('text')
   const [text, setText] = useState('')
@@ -36,6 +74,8 @@ export default function TranscriptInput({ onAddTasks, onClose, asModal }) {
   const [popup, setPopup] = useState(null)
   const [selected, setSelected] = useState({})
   const [catPopup, setCatPopup] = useState(null) // pending save data waiting for category
+  const [dragOver, setDragOver] = useState(false)
+  const [transcribing, setTranscribing] = useState(false)
   const recognitionRef = useRef(null)
   const finalRef = useRef('')
   const fileRef = useRef(null)
@@ -91,6 +131,24 @@ export default function TranscriptInput({ onAddTasks, onClose, asModal }) {
   }
 
   const stopVoice = () => { recognitionRef.current?.stop() }
+
+  const handleAudioFile = async (file) => {
+    if (!file) return
+    const allowed = ['audio/mp4', 'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/m4a', 'audio/ogg', 'video/mp4']
+    const mediaType = allowed.includes(file.type) ? file.type : 'audio/mp4'
+    setTranscribing(true)
+    setError('')
+    try {
+      const base64 = await fileToBase64(file)
+      const transcript = await transcribeAudio(base64, mediaType)
+      setText(transcript)
+      setMode('text')
+      await process(transcript)
+    } catch (e) {
+      setError('Transcription failed: ' + e.message)
+    }
+    setTranscribing(false)
+  }
 
   const confirmTasks = (addAll = false) => {
     const toAdd = popup.tasks.filter((_, i) => addAll || selected[i])
@@ -204,7 +262,26 @@ export default function TranscriptInput({ onAddTasks, onClose, asModal }) {
 
       {mode === 'file' && (
         <div className="ti-body">
-          <p className="ti-hint">File upload coming soon — use Paste Text or Voice for now.</p>
+          <p className="ti-hint">Drop an MP4, MP3, WAV, or M4A — Claude will transcribe and extract tasks.</p>
+          <div
+            className={`ti-dropzone ${dragOver ? 'drag-over' : ''} ${transcribing ? 'uploading' : ''}`}
+            onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={e => { e.preventDefault(); setDragOver(false); handleAudioFile(e.dataTransfer.files[0]) }}
+            onClick={() => fileRef.current?.click()}
+          >
+            {transcribing
+              ? <span className="ti-drop-label">Transcribing...</span>
+              : <><span className="ti-drop-icon">🎵</span><span className="ti-drop-label">Drop audio/video file here or click to browse</span><span className="ti-drop-sub">MP4 · MP3 · WAV · M4A</span></>
+            }
+          </div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="audio/*,video/mp4"
+            style={{ display: 'none' }}
+            onChange={e => handleAudioFile(e.target.files[0])}
+          />
           {error && <div className="ti-error">{error}</div>}
         </div>
       )}
