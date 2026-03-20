@@ -208,7 +208,7 @@ export default function App() {
         <div className="header-left">
           <div className="logo">PH</div>
           <div>
-            <h1 className="header-title">PH Dev Work Platform</h1>
+            <h1 className="header-title">PH Dev</h1>
             <p className="header-date">{format(new Date(), 'EEEE, MMMM d')}</p>
           </div>
         </div>
