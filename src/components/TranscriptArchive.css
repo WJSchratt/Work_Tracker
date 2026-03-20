@@ -1,37 +1,54 @@
 .ta-view { padding: 1.5rem 2rem; }
-.ta-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; gap: 12px; flex-wrap: wrap; }
+.ta-header { display: flex; flex-direction: column; gap: 12px; margin-bottom: 1.25rem; }
+.ta-title-row { display: flex; align-items: center; gap: 12px; }
 .ta-title { font-size: 16px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 10px; }
 .ta-count { font-size: 13px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 2px 10px; color: var(--text-muted); font-weight: 400; }
-.ta-controls { display: flex; gap: 8px; }
-.ta-search { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 7px 12px; font-size: 13px; color: var(--text); width: 240px; font-family: var(--font); }
+.ta-clear { background: transparent; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 4px 10px; font-size: 11px; color: var(--text-muted); cursor: pointer; transition: all 0.15s; }
+.ta-clear:hover { border-color: var(--red); color: var(--red); }
+
+.ta-filters { display: flex; gap: 8px; flex-wrap: wrap; }
+.ta-search { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 7px 12px; font-size: 13px; color: var(--text); flex: 1; min-width: 200px; font-family: var(--font); }
 .ta-search:focus { outline: none; border-color: var(--accent); }
 .ta-search::placeholder { color: var(--text-dim); }
-.ta-filter { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 7px 10px; font-size: 12px; color: var(--text-muted); cursor: pointer; }
-.ta-empty { font-size: 13px; color: var(--text-muted); padding: 2rem 0; text-align: center; }
+.ta-select { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 7px 10px; font-size: 12px; color: var(--text-muted); cursor: pointer; font-family: var(--font); }
+.ta-select:focus { outline: none; border-color: var(--accent); }
+.ta-date-range { display: flex; align-items: center; gap: 6px; }
+.ta-date-sep { font-size: 12px; color: var(--text-dim); }
 
+.ta-cat-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.ta-cat-pill { background: transparent; border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; font-size: 11px; color: var(--text-muted); cursor: pointer; transition: all 0.15s; }
+.ta-cat-pill:hover { background: var(--card); color: var(--text); }
+.ta-cat-pill.active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
+
+.ta-empty { font-size: 13px; color: var(--text-muted); padding: 2rem 0; text-align: center; }
 .ta-list { display: flex; flex-direction: column; gap: 8px; }
+
 .ta-item { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; transition: border-color 0.15s; }
 .ta-item:hover { border-color: var(--border-light); }
-
 .ta-item-header { display: flex; align-items: flex-start; justify-content: space-between; padding: 12px 16px; cursor: pointer; gap: 12px; }
-.ta-item-left { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 0; }
-.ta-type-badge { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; padding: 2px 8px; border-radius: 8px; align-self: flex-start; }
-.ta-item-meta { display: flex; align-items: center; gap: 10px; }
+.ta-item-left { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
+.ta-item-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ta-item-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+.ta-cat-badge { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; padding: 2px 9px; border-radius: 8px; border: 1px solid transparent; cursor: pointer; transition: opacity 0.15s; }
+.ta-cat-badge:hover { opacity: 0.75; }
+.ta-cat-select { background: var(--card); border: 1px solid var(--accent); border-radius: var(--radius-sm); padding: 2px 6px; font-size: 11px; color: var(--text); font-family: var(--font); }
+
 .ta-item-date { font-size: 11px; color: var(--text-muted); font-family: var(--mono); }
 .ta-item-by { font-size: 11px; color: var(--text-dim); }
 .ta-item-summary { font-size: 12px; color: var(--text-muted); line-height: 1.5; margin: 0; }
+.ta-item-preview { font-size: 12px; color: var(--text-dim); line-height: 1.5; margin: 0; font-style: italic; }
 
-.ta-item-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .ta-tasks-badge { font-size: 10px; background: var(--accent-dim); color: var(--accent); border-radius: 8px; padding: 2px 8px; }
 .ta-delete { background: transparent; border: none; color: var(--text-dim); font-size: 11px; padding: 2px 6px; border-radius: 4px; transition: all 0.15s; }
 .ta-delete:hover { color: var(--red); background: var(--red-dim); }
 .ta-expand { font-size: 10px; color: var(--text-dim); }
 
-.ta-item-body { padding: 0 16px 14px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 12px; padding-top: 12px; }
+.ta-item-body { padding: 12px 16px 14px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 12px; }
 .ta-section { display: flex; flex-direction: column; gap: 6px; }
 .ta-section-label { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
 .ta-section-text { font-size: 13px; color: var(--text); line-height: 1.6; white-space: pre-wrap; background: var(--surface); border-radius: var(--radius-sm); padding: 10px 12px; }
-.ta-task-row { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 4px 0; }
+.ta-task-row { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 3px 0; }
 .ta-task-priority { font-size: 10px; font-weight: 600; text-transform: uppercase; font-family: var(--mono); }
 .ta-task-priority[data-priority="critical"] { color: #ef4444; }
 .ta-task-priority[data-priority="high"] { color: #f59e0b; }

@@ -64,6 +64,7 @@ async function transcribeWithAssemblyAI(file) {
 export default function TranscriptInput({ onAddTasks, onClose, asModal }) {
   const [mode, setMode] = useState('text')
   const [text, setText] = useState('')
+  const [category, setCategory] = useState('General')
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [uploadStatus, setUploadStatus] = useState('')
@@ -90,7 +91,7 @@ export default function TranscriptInput({ onAddTasks, onClose, asModal }) {
       setPopup({ ...parsed, rawText: input })
       await addDoc(collection(db, 'transcripts'), {
         text: input.trim(), summary: parsed.summary, tasks: parsed.tasks,
-        type: 'transcript', createdAt: serverTimestamp(), addedBy: auth.currentUser?.email || 'Walt'
+        type: 'transcript', category, createdAt: serverTimestamp(), addedBy: auth.currentUser?.email || 'Walt'
       })
     } catch (e) { setError('Error: ' + e.message) }
     setLoading(false)
@@ -145,7 +146,7 @@ export default function TranscriptInput({ onAddTasks, onClose, asModal }) {
   const saveAsNote = async () => {
     if (!text.trim()) return
     await addDoc(collection(db, 'transcripts'), {
-      text: text.trim(), type: 'note', summary: '',
+      text: text.trim(), type: 'note', summary: '', category,
       createdAt: serverTimestamp(), addedBy: auth.currentUser?.email || 'Walt'
     })
     setText(''); if (onClose) onClose()
@@ -156,6 +157,13 @@ export default function TranscriptInput({ onAddTasks, onClose, asModal }) {
       <div className="ti-modal-header">
         <h2>Add Transcript / Voice Note</h2>
         {onClose && <button className="ti-close" onClick={onClose}>✕</button>}
+      </div>
+
+      <div className="ti-cat-row">
+        <label className="ti-cat-label">Category</label>
+        <select className="ti-cat-select" value={category} onChange={e => setCategory(e.target.value)}>
+          {['Meeting Notes','Voice Note','Loom Transcript','Signal','General'].map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
       </div>
 
       <div className="ti-mode-tabs">
