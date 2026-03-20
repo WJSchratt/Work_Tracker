@@ -11,6 +11,7 @@ import TaskModal from './components/TaskModal'
 import ClockPanel from './components/ClockPanel'
 import Timesheet from './components/Timesheet'
 import IssuesBoard from './components/IssuesBoard'
+import DailyBriefing from './components/DailyBriefing'
 import Login from './components/Login'
 import './App.css'
 
@@ -255,7 +256,7 @@ export default function App() {
           </button>
         </div>
         <div className="header-right">
-          <ClockPanel clockState={clockState} onClockIn={clockIn} onClockOut={clockOut} todayMs={todayMs} />
+          <ClockPanel clockState={clockState} onClockIn={clockIn} onClockOut={clockOut} todayMs={todayMs} activeTask={inProgressTasks[0] || null} />
           <button className="signout-btn" onClick={() => signOut(auth)} title="Sign out">↩</button>
         </div>
       </header>
@@ -354,6 +355,18 @@ export default function App() {
 
           {/* ISSUES BOARD */}
           <IssuesBoard issues={issues} currentUser={user} />
+
+          {/* DAILY BRIEFING + AI */}
+          <DailyBriefing
+            tasks={activeTasks}
+            onAddTasks={(suggestedTasks) => {
+              suggestedTasks.forEach(t => addTask({
+                title: t.title,
+                description: t.description || '',
+                priority: t.priority || 'medium',
+              }))
+            }}
+          />
 
           {/* KPI */}
           <div className="kpi-section">
