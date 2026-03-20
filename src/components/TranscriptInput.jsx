@@ -4,6 +4,7 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import './TranscriptInput.css'
 
 const ANTHROPIC_KEY = import.meta.env.VITE_ANTHROPIC_KEY
+const CATEGORIES = ['Meeting Notes', 'Voice Note', 'Loom Transcript', 'Signal', 'General']
 
 async function callClaude(prompt) {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -25,54 +26,16 @@ async function callClaude(prompt) {
   return data.content?.[0]?.text || ''
 }
 
-async function transcribeWithAssemblyAI(file) {
-  // Step 1: Upload via our serverless proxy
-  const uploadRes = await fetch('/api/transcribe', {
-    method: 'POST',
-    headers: { 'x-action': 'upload', 'content-type': file.type || 'application/octet-stream' },
-    body: file
-  })
-  const { upload_url } = await uploadRes.json()
-  if (!upload_url) throw new Error('Upload failed')
-
-  // Step 2: Request transcription
-  const transcriptRes = await fetch('/api/transcribe', {
-    method: 'POST',
-    headers: { 'x-action': 'transcribe', 'content-type': 'application/json' },
-    body: JSON.stringify({ audio_url: upload_url })
-  })
-  const { id } = await transcriptRes.json()
-  if (!id) throw new Error('Transcription request failed')
-
-  // Step 3: Poll until done
-  let attempts = 0
-  while (attempts < 60) {
-    await new Promise(r => setTimeout(r, 3000))
-    const pollRes = await fetch('/api/transcribe', {
-      method: 'POST',
-      headers: { 'x-action': 'poll', 'content-type': 'application/json' },
-      body: JSON.stringify({ id })
-    })
-    const result = await pollRes.json()
-    if (result.status === 'completed') return result.text
-    if (result.status === 'error') throw new Error(result.error)
-    attempts++
-  }
-  throw new Error('Transcription timed out')
-}
-
 export default function TranscriptInput({ onAddTasks, onClose, asModal }) {
   const [mode, setMode] = useState('text')
   const [text, setText] = useState('')
-  const [category, setCategory] = useState('General')
   const [loading, setLoading] = useState(false)
-  const [uploading, setUploading] = useState(false)
-  const [uploadStatus, setUploadStatus] = useState('')
   const [recording, setRecording] = useState(false)
   const [liveText, setLiveText] = useState('')
   const [error, setError] = useState('')
   const [popup, setPopup] = useState(null)
   const [selected, setSelected] = useState({})
+  const [catPopup, setCatPopup] = useState(null) // pending save data waiting for category
   const recognitionRef = useRef(null)
   const finalRef = useRef('')
   const fileRef = useRef(null)
@@ -88,29 +51,22 @@ export default function TranscriptInput({ onAddTasks, onClose, asModal }) {
       const sel = {}
       parsed.tasks.forEach((_, i) => sel[i] = true)
       setSelected(sel)
-      setPopup({ ...parsed, rawText: input })
-      await addDoc(collection(db, 'transcripts'), {
-        text: input.trim(), summary: parsed.summary, tasks: parsed.tasks,
-        type: 'transcript', category, createdAt: serverTimestamp(), addedBy: auth.currentUser?.email || 'Walt'
-      })
+      // Show category popup before saving
+      setCatPopup({ parsed, rawText: input })
     } catch (e) { setError('Error: ' + e.message) }
     setLoading(false)
   }
 
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0]
-    if (!file) return
-    setUploading(true); setError(''); setUploadStatus('Uploading file...')
-    try {
-      setUploadStatus('Transcribing... this may take 1-2 minutes')
-      const transcript = await transcribeWithAssemblyAI(file)
-      setUploadStatus('Transcription complete!')
-      setText(transcript)
-      setMode('text')
-      await process(transcript)
-    } catch (e) { setError('Transcription error: ' + e.message) }
-    setUploading(false); setUploadStatus('')
-    e.target.value = ''
+  const saveWithCategory = async (category) => {
+    if (!catPopup) return
+    const { parsed, rawText } = catPopup
+    await addDoc(collection(db, 'transcripts'), {
+      text: rawText.trim(), summary: parsed.summary, tasks: parsed.tasks,
+      type: 'transcript', category, createdAt: serverTimestamp(),
+      addedBy: auth.currentUser?.email || 'Walt'
+    })
+    setPopup({ ...parsed, rawText })
+    setCatPopup(null)
   }
 
   const startVoice = () => {
@@ -143,7 +99,7 @@ export default function TranscriptInput({ onAddTasks, onClose, asModal }) {
     if (onClose) onClose()
   }
 
-  const saveAsNote = async () => {
+  const saveAsNote = async (category = 'General') => {
     if (!text.trim()) return
     await addDoc(collection(db, 'transcripts'), {
       text: text.trim(), type: 'note', summary: '', category,
@@ -152,74 +108,27 @@ export default function TranscriptInput({ onAddTasks, onClose, asModal }) {
     setText(''); if (onClose) onClose()
   }
 
-  const content = (
-    <div className="ti-modal-inner">
-      <div className="ti-modal-header">
-        <h2>Add Transcript / Voice Note</h2>
-        {onClose && <button className="ti-close" onClick={onClose}>✕</button>}
-      </div>
-
-      <div className="ti-cat-row">
-        <label className="ti-cat-label">Category</label>
-        <select className="ti-cat-select" value={category} onChange={e => setCategory(e.target.value)}>
-          {['Meeting Notes','Voice Note','Loom Transcript','Signal','General'].map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
-      </div>
-
-      <div className="ti-mode-tabs">
-        <button className={`ti-tab ${mode === 'text' ? 'active' : ''}`} onClick={() => setMode('text')}>📄 Paste Text</button>
-        <button className={`ti-tab ${mode === 'voice' ? 'active' : ''}`} onClick={() => setMode('voice')}>🎙 Voice</button>
-        <button className={`ti-tab ${mode === 'file' ? 'active' : ''}`} onClick={() => setMode('file')}>📎 Upload File</button>
-      </div>
-
-      {mode === 'text' && (
-        <div className="ti-body">
-          <textarea className="ti-textarea" value={text} onChange={e => setText(e.target.value)}
-            placeholder="Paste Loom transcript, meeting notes, Jeremiah's instructions..." rows={7} autoFocus />
-          {error && <div className="ti-error">{error}</div>}
-          <div className="ti-actions">
-            <button className="ti-btn-extract" onClick={() => process(text)} disabled={loading || !text.trim()}>
-              {loading ? 'Processing...' : '✦ Extract Tasks'}
-            </button>
-            <button className="ti-btn-save" onClick={saveAsNote} disabled={!text.trim()}>Save as Note Only</button>
+  // Category selection popup
+  if (catPopup) {
+    return (
+      <div className="popup-overlay" onClick={e => e.target === e.currentTarget && setCatPopup(null)}>
+        <div className="popup cat-popup">
+          <div className="popup-header">
+            <h3>What category is this?</h3>
+            <button className="popup-close" onClick={() => setCatPopup(null)}>✕</button>
+          </div>
+          <div className="popup-summary">{catPopup.parsed.summary}</div>
+          <div className="cat-grid">
+            {CATEGORIES.map(c => (
+              <button key={c} className="cat-choice-btn" onClick={() => saveWithCategory(c)}>{c}</button>
+            ))}
           </div>
         </div>
-      )}
+      </div>
+    )
+  }
 
-      {mode === 'voice' && (
-        <div className="ti-body">
-          <p className="ti-hint">Speak your notes — Claude will extract tasks. Chrome only.</p>
-          {recording && <div className="ti-live">{liveText || 'Listening...'}</div>}
-          <div className="ti-voice-row">
-            {!recording
-              ? <button className="ti-btn-rec" onClick={startVoice}>🎙 Start Recording</button>
-              : <button className="ti-btn-stop" onClick={stopVoice}>⏹ Stop & Process</button>}
-            {recording && <span className="ti-rec-dot">● Recording</span>}
-          </div>
-          {error && <div className="ti-error">{error}</div>}
-        </div>
-      )}
-
-      {mode === 'file' && (
-        <div className="ti-body">
-          <p className="ti-hint">Upload an MP4, MP3, WAV, or any audio/video file. AssemblyAI will transcribe it automatically — usually takes 1-2 minutes.</p>
-          {uploading ? (
-            <div className="ti-uploading">
-              <div className="ti-spinner" />
-              <span>{uploadStatus}</span>
-            </div>
-          ) : (
-            <button className="ti-btn-upload" onClick={() => fileRef.current?.click()}>
-              📎 Choose File (MP4, MP3, WAV, M4A...)
-            </button>
-          )}
-          <input ref={fileRef} type="file" accept="audio/*,video/*,.mp4,.mp3,.wav,.m4a,.webm" style={{ display: 'none' }} onChange={handleFileUpload} />
-          {error && <div className="ti-error">{error}</div>}
-        </div>
-      )}
-    </div>
-  )
-
+  // Task selection popup
   if (popup) {
     return (
       <div className="popup-overlay" onClick={e => e.target === e.currentTarget && setPopup(null)}>
@@ -252,6 +161,56 @@ export default function TranscriptInput({ onAddTasks, onClose, asModal }) {
     )
   }
 
+  const content = (
+    <div className="ti-modal-inner">
+      <div className="ti-modal-header">
+        <h2>Add Transcript / Voice Note</h2>
+        {onClose && <button className="ti-close" onClick={onClose}>✕</button>}
+      </div>
+
+      <div className="ti-mode-tabs">
+        <button className={`ti-tab ${mode === 'text' ? 'active' : ''}`} onClick={() => setMode('text')}>📄 Paste Text</button>
+        <button className={`ti-tab ${mode === 'voice' ? 'active' : ''}`} onClick={() => setMode('voice')}>🎙 Voice</button>
+        <button className={`ti-tab ${mode === 'file' ? 'active' : ''}`} onClick={() => setMode('file')}>📎 Upload File</button>
+      </div>
+
+      {mode === 'text' && (
+        <div className="ti-body">
+          <textarea className="ti-textarea" value={text} onChange={e => setText(e.target.value)}
+            placeholder="Paste Loom transcript, meeting notes, Jeremiah's instructions..." rows={7} autoFocus />
+          {error && <div className="ti-error">{error}</div>}
+          <div className="ti-actions">
+            <button className="ti-btn-extract" onClick={() => process(text)} disabled={loading || !text.trim()}>
+              {loading ? 'Processing...' : '✦ Extract Tasks'}
+            </button>
+            <button className="ti-btn-save" onClick={() => saveAsNote()} disabled={!text.trim()}>Save as Note Only</button>
+          </div>
+        </div>
+      )}
+
+      {mode === 'voice' && (
+        <div className="ti-body">
+          <p className="ti-hint">Speak your notes — Claude will extract tasks. Chrome only.</p>
+          {recording && <div className="ti-live">{liveText || 'Listening...'}</div>}
+          <div className="ti-voice-row">
+            {!recording
+              ? <button className="ti-btn-rec" onClick={startVoice}>🎙 Start Recording</button>
+              : <button className="ti-btn-stop" onClick={stopVoice}>⏹ Stop & Process</button>}
+            {recording && <span className="ti-rec-dot">● Recording</span>}
+          </div>
+          {error && <div className="ti-error">{error}</div>}
+        </div>
+      )}
+
+      {mode === 'file' && (
+        <div className="ti-body">
+          <p className="ti-hint">File upload coming soon — use Paste Text or Voice for now.</p>
+          {error && <div className="ti-error">{error}</div>}
+        </div>
+      )}
+    </div>
+  )
+
   if (asModal) {
     return (
       <div className="popup-overlay" onClick={e => e.target === e.currentTarget && onClose?.()}>
@@ -259,6 +218,5 @@ export default function TranscriptInput({ onAddTasks, onClose, asModal }) {
       </div>
     )
   }
-
   return content
 }

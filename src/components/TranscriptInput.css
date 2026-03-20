@@ -102,3 +102,12 @@
 .ti-cat-label { font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; flex-shrink: 0; }
 .ti-cat-select { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 5px 10px; font-size: 12px; color: var(--text); font-family: var(--font); flex: 1; }
 .ti-cat-select:focus { outline: none; border-color: var(--accent); }
+
+.cat-popup { max-width: 380px; }
+.cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 1rem 1.25rem; }
+.cat-choice-btn {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 12px; font-size: 13px; font-weight: 500; color: var(--text);
+  cursor: pointer; transition: all 0.15s; text-align: center;
+}
+.cat-choice-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }

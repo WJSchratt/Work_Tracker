@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { db } from '../firebase'
 import { deleteDoc, doc, updateDoc } from 'firebase/firestore'
-import { format, isWithinInterval, startOfDay, endOfDay, parseISO } from 'date-fns'
+import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns'
 import './TranscriptArchive.css'
 
 const CATEGORIES = ['Meeting Notes', 'Voice Note', 'Loom Transcript', 'Signal', 'General']
@@ -21,6 +21,10 @@ export default function TranscriptArchive({ transcripts }) {
   const [dateTo, setDateTo] = useState('')
   const [expanded, setExpanded] = useState(null)
   const [editingCat, setEditingCat] = useState(null)
+  const [editingEntry, setEditingEntry] = useState(null)
+  const [editText, setEditText] = useState('')
+  const [editSummary, setEditSummary] = useState('')
+  const [saving, setSaving] = useState(false)
 
   const filtered = transcripts.filter(t => {
     const matchSearch = !search ||
@@ -53,6 +57,21 @@ export default function TranscriptArchive({ transcripts }) {
   const setCategory = async (id, category) => {
     await updateDoc(doc(db, 'transcripts', id), { category })
     setEditingCat(null)
+  }
+
+  const startEdit = (t, e) => {
+    e.stopPropagation()
+    setEditingEntry(t.id)
+    setEditText(t.text || '')
+    setEditSummary(t.summary || '')
+    setExpanded(t.id)
+  }
+
+  const saveEdit = async (id) => {
+    setSaving(true)
+    await updateDoc(doc(db, 'transcripts', id), { text: editText, summary: editSummary })
+    setEditingEntry(null)
+    setSaving(false)
   }
 
   const clearFilters = () => {
@@ -133,6 +152,7 @@ export default function TranscriptArchive({ transcripts }) {
                 </div>
                 <div className="ta-item-right">
                   {t.tasks?.length > 0 && <span className="ta-tasks-badge">{t.tasks.length} tasks</span>}
+                  <button className="ta-edit-btn" onClick={e => startEdit(t, e)}>Edit</button>
                   <button className="ta-delete" onClick={e => { e.stopPropagation(); handleDelete(t.id) }}>✕</button>
                   <span className="ta-expand">{expanded === t.id ? '▲' : '▼'}</span>
                 </div>
@@ -140,22 +160,41 @@ export default function TranscriptArchive({ transcripts }) {
 
               {expanded === t.id && (
                 <div className="ta-item-body">
-                  {t.text && (
-                    <div className="ta-section">
-                      <div className="ta-section-label">Full Text</div>
-                      <div className="ta-section-text">{t.text}</div>
-                    </div>
-                  )}
-                  {t.tasks?.length > 0 && (
-                    <div className="ta-section">
-                      <div className="ta-section-label">Extracted Tasks</div>
-                      {t.tasks.map((task, i) => (
-                        <div key={i} className="ta-task-row">
-                          <span className="ta-task-priority" data-priority={task.priority}>{task.priority}</span>
-                          <span className="ta-task-title">{task.title}</span>
+                  {editingEntry === t.id ? (
+                    <>
+                      <div className="ta-section">
+                        <div className="ta-section-label">Summary</div>
+                        <textarea className="ta-edit-input" value={editSummary} onChange={e => setEditSummary(e.target.value)} rows={2} placeholder="Summary..." />
+                      </div>
+                      <div className="ta-section">
+                        <div className="ta-section-label">Full Text</div>
+                        <textarea className="ta-edit-input" value={editText} onChange={e => setEditText(e.target.value)} rows={8} placeholder="Full text..." />
+                      </div>
+                      <div className="ta-edit-actions">
+                        <button className="ta-save-btn" onClick={() => saveEdit(t.id)} disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
+                        <button className="ta-cancel-btn" onClick={() => setEditingEntry(null)}>Cancel</button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {t.text && (
+                        <div className="ta-section">
+                          <div className="ta-section-label">Full Text</div>
+                          <div className="ta-section-text">{t.text}</div>
                         </div>
-                      ))}
-                    </div>
+                      )}
+                      {t.tasks?.length > 0 && (
+                        <div className="ta-section">
+                          <div className="ta-section-label">Extracted Tasks</div>
+                          {t.tasks.map((task, i) => (
+                            <div key={i} className="ta-task-row">
+                              <span className="ta-task-priority" data-priority={task.priority}>{task.priority}</span>
+                              <span className="ta-task-title">{task.title}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               )}

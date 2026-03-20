@@ -55,3 +55,14 @@
 .ta-task-priority[data-priority="medium"] { color: #6c63ff; }
 .ta-task-priority[data-priority="low"] { color: #22c55e; }
 .ta-task-title { color: var(--text); }
+
+.ta-edit-btn { background: transparent; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 2px 8px; font-size: 11px; color: var(--text-muted); cursor: pointer; transition: all 0.15s; }
+.ta-edit-btn:hover { border-color: var(--accent); color: var(--accent); }
+.ta-edit-input { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 10px; font-size: 13px; color: var(--text); resize: vertical; font-family: var(--font); width: 100%; line-height: 1.5; }
+.ta-edit-input:focus { outline: none; border-color: var(--accent); }
+.ta-edit-actions { display: flex; gap: 8px; }
+.ta-save-btn { background: var(--accent); border: none; border-radius: var(--radius-sm); padding: 7px 16px; font-size: 12px; font-weight: 500; color: #fff; cursor: pointer; transition: opacity 0.15s; }
+.ta-save-btn:hover { opacity: 0.85; }
+.ta-save-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.ta-cancel-btn { background: transparent; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 7px 14px; font-size: 12px; color: var(--text-muted); cursor: pointer; transition: all 0.15s; }
+.ta-cancel-btn:hover { background: var(--card); }
