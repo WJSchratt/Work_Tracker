@@ -1,0 +1,22 @@
+.task-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); cursor: pointer; transition: all 0.15s;
+  position: relative; overflow: hidden; display: flex; flex-direction: row;
+}
+.task-card:hover { background: var(--card-hover); border-color: var(--border-light); transform: translateY(-1px); }
+.task-card.dragging { opacity: 0.4; cursor: grabbing; }
+.task-card.drag-over { border-color: var(--accent); background: var(--accent-dim); }
+
+.card-priority-bar { width: 4px; flex-shrink: 0; }
+.card-inner { padding: 14px 14px 12px; flex: 1; min-width: 0; }
+.card-title { font-size: 14px; font-weight: 500; color: var(--text); line-height: 1.4; margin-bottom: 6px; }
+.card-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 10px; }
+
+.card-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.card-client { font-size: 11px; font-weight: 500; padding: 2px 9px; border-radius: 10px; }
+.card-meta { display: flex; align-items: center; gap: 8px; }
+.priority-label { font-size: 11px; font-weight: 500; text-transform: capitalize; font-family: var(--mono); }
+.notes-badge {
+  font-size: 10px; color: var(--text-dim); background: var(--surface);
+  border: 1px solid var(--border); border-radius: 6px; padding: 1px 6px;
+}

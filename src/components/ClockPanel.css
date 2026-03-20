@@ -1,0 +1,18 @@
+.clock-panel { display: flex; align-items: center; gap: 14px; }
+.clock-info { text-align: right; }
+.clock-today { font-size: 13px; font-weight: 500; color: var(--text); font-family: var(--mono); }
+.clock-session { font-size: 11px; color: var(--green); font-family: var(--mono); margin-top: 1px; }
+
+.clock-btn {
+  display: flex; align-items: center; gap: 7px; border: none;
+  border-radius: var(--radius-sm); padding: 8px 18px; font-size: 13px; font-weight: 500; transition: opacity 0.15s;
+}
+.clock-btn.in { background: var(--green); color: #fff; }
+.clock-btn.out { background: var(--red-dim); color: var(--red); border: 1px solid var(--red); }
+.clock-btn:hover { opacity: 0.85; }
+
+.clock-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.clock-btn.in .clock-dot { background: rgba(255,255,255,0.7); }
+.clock-btn.out .clock-dot { background: var(--red); animation: pulse 1.2s ease-in-out infinite; }
+
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
