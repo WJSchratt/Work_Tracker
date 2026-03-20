@@ -212,6 +212,59 @@ export default function TranscriptInput({ onAddTasks, onClose, asModal }) {
   )
 
   if (asModal) {
+    // Show category popup inside modal context
+    if (catPopup) {
+      return (
+        <div className="popup-overlay">
+          <div className="popup cat-popup">
+            <div className="popup-header">
+              <h3>What category is this?</h3>
+              <button className="popup-close" onClick={() => setCatPopup(null)}>✕</button>
+            </div>
+            <div className="popup-summary">{catPopup.parsed.summary}</div>
+            <div className="cat-grid">
+              {CATEGORIES.map(c => (
+                <button key={c} className="cat-choice-btn" onClick={() => saveWithCategory(c)}>{c}</button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    // Show task popup inside modal context
+    if (popup) {
+      return (
+        <div className="popup-overlay">
+          <div className="popup">
+            <div className="popup-header">
+              <h3>Extracted Tasks</h3>
+              <button className="popup-close" onClick={() => setPopup(null)}>✕</button>
+            </div>
+            <div className="popup-summary">{popup.summary}</div>
+            <div className="popup-tasks">
+              {popup.tasks.map((t, i) => (
+                <label key={i} className={`popup-task ${selected[i] ? 'selected' : ''}`}>
+                  <input type="checkbox" checked={!!selected[i]} onChange={e => setSelected(s => ({ ...s, [i]: e.target.checked }))} />
+                  <div className="popup-task-info">
+                    <span className="popup-priority" data-priority={t.priority}>{t.priority}</span>
+                    <span className="popup-task-title">{t.title}</span>
+                    {t.description && <span className="popup-task-desc">{t.description}</span>}
+                  </div>
+                </label>
+              ))}
+            </div>
+            <div className="popup-footer">
+              <button className="btn-add-selected" onClick={() => confirmTasks(false)}>
+                + Add {Object.values(selected).filter(Boolean).length} Selected
+              </button>
+              <button className="btn-add-all-p" onClick={() => confirmTasks(true)}>Add All</button>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
     return (
       <div className="popup-overlay" onClick={e => e.target === e.currentTarget && onClose?.()}>
         <div className="ti-modal">{content}</div>
