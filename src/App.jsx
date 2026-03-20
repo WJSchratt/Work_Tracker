@@ -14,6 +14,7 @@ import IssuesBoard from './components/IssuesBoard'
 import DailyFocus from './components/DailyFocus'
 import TranscriptInput from './components/TranscriptInput'
 import TranscriptArchive from './components/TranscriptArchive'
+import DailySummary from './components/DailySummary'
 import Login from './components/Login'
 import './App.css'
 
@@ -220,6 +221,7 @@ export default function App() {
           <button className={`view-tab ${view === 'archive' ? 'active' : ''}`} onClick={() => setView('archive')}>
             Archive {archivedTasks.length > 0 && <span className="tab-badge">{archivedTasks.length}</span>}
           </button>
+          <button className={`view-tab ${view === 'daily' ? 'active' : ''}`} onClick={() => setView('daily')}>Daily Summary</button>
         </div>
         <div className="header-right">
           <ClockPanel clockState={clockState} onClockIn={clockIn} onClockOut={clockOut} todayMs={todayMs} />
@@ -229,6 +231,7 @@ export default function App() {
 
       {view === 'timesheet' ? <Timesheet sessions={sessions} /> :
        view === 'transcripts' ? <TranscriptArchive transcripts={transcripts} /> :
+       view === 'daily' ? <DailySummary tasks={tasks} sessions={sessions} todayMs={todayMs} /> :
        view === 'archive' ? (
         <div className="archive-view">
           <h2 className="archive-heading">Archived Tasks <span className="archive-count">{archivedTasks.length}</span></h2>
