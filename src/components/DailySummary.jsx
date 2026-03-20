@@ -14,11 +14,12 @@ export default function DailySummary({ tasks, sessions, todayMs }) {
   const [note, setNote] = useState('')
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     getDoc(doc(db, 'dailySummaries', today)).then(snap => {
       if (snap.exists()) setNote(snap.data().note || '')
-    })
+    }).catch(err => setError('Failed to load notes: ' + err.message))
   }, [today])
 
   const doneTodayTasks = tasks.filter(t => {
@@ -48,14 +49,20 @@ export default function DailySummary({ tasks, sessions, todayMs }) {
 
   const handleSave = async () => {
     setSaving(true)
-    await setDoc(doc(db, 'dailySummaries', today), {
-      note,
-      date: today,
-      savedAt: new Date().toISOString()
-    })
-    setSaving(false)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    setError(null)
+    try {
+      await setDoc(doc(db, 'dailySummaries', today), {
+        note,
+        date: today,
+        savedAt: new Date().toISOString()
+      })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch (err) {
+      setError('Failed to save: ' + err.message)
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -136,6 +143,7 @@ export default function DailySummary({ tasks, sessions, todayMs }) {
             onChange={e => setNote(e.target.value)}
             rows={6}
           />
+          {error && <div className="ds-error">{error}</div>}
           <div className="ds-note-footer">
             <button className="ds-save-btn" onClick={handleSave} disabled={saving}>
               {saving ? 'Saving…' : saved ? 'Saved!' : 'Save Notes'}
